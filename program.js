@@ -7,42 +7,31 @@
 //
 //====================================
 
-  
-//Main
-//データ
+//***[MAIN]***
 var KEY_NAME = "全国";
         
-//日付配列の生成
 var days = new Array();
 
-//新規感染者配列の生成
 var newdays = new Array();
 
-//周毎新規感染者配列の生成
 var newweeks = new Array();
 var newweeksdays = new Array();
         
 var minnewday = 999999;
 var maxnewday = 0;
 
-//都市リスト配列
 var cities = new Array();
-var citiesIsLoad = false;
 
-//autoplayモード
 var autoplay = false;
 var autochangetime = 15;
 
 var isWidget = false;
 
-//darkmode
 var isDark = false;
 
 function init() {
-    //パラメーター取得
     var params = (new URL(document.location)).searchParams;
     
-    //地域データの処理
     try {
         var city = removehtml(params.get("city"));
         if ( city != "" && city != null ) {
@@ -51,7 +40,6 @@ function init() {
         } catch(e) {
     }
     
-    //その他の処理
     try {
         var mode = removehtml(params.get("autoplay"));
         if ( mode == "true" ) { autoplay = true; }
@@ -63,7 +51,6 @@ function init() {
         } catch(e) {
     }
     
-    //表示の調整
     try {
         var darkmode = removehtml(params.get("darkmode"));
         if ( darkmode == "dark" ) {
@@ -88,19 +75,16 @@ function init() {
     } catch(e) { 
     }
     
-    //日付フォームの変更
-    var startdate = "2020-01-01";//dateToFormatString(nowmonth(), "%YYYY%-%MM%-%DD%");
+    var startdate = "2022-01-01";
     var enddate = dateToFormatString(new Date(), "%YYYY%-%MM%-%DD%");
     
     showdateform(startdate, enddate);
     
-    //データの読み込み
     loaddata();
 }
 
 //Automode
 function autoplaymode() {
-    //都道府県切り替え
     var index = -1;
     
     do {
@@ -112,22 +96,18 @@ function autoplaymode() {
     
     setchangecity();
     
-    //自動切り替え
     delayedCall(autochangetime,function(){
         reloaddata();
     });
 }
         
-//日付に関する関数
 function nowmonth() {
     var date = new Date();
     
-    //本日が月の10日未満の場合は先月をセットする
     if ( date.getDate() <= 10 ) {
         date.setMonth(date.getMonth() -1 );
     }
     
-    //1日をセット
     date.setDate(1);
     
     return date;
@@ -153,7 +133,6 @@ function checkdaterange(date) {
         var enddate = Date.parse(end.value);
         var checkday = Date.parse(date);
 
-        // 現在は2019年3月18日 21:00:00よりも後なら
         var flag = false;
         if ( Number(startdate) <= Number(checkday)  && Number(checkday) <= Number(enddate) ) {
 
@@ -166,8 +145,6 @@ function checkdaterange(date) {
     return flag;
 }
 
-//地域に関する関数
-
 function setchangekey(text) {
     KEY_NAME = text;
 }
@@ -177,6 +154,7 @@ function changecity() {
     var index = cty.selectedIndex;
     var value = cty.options[index].value;
     var text  = cty.options[index].text;
+    var MAX_CITY_COUNT = -1;
     
     KEY_NAME = text;
     
@@ -208,13 +186,9 @@ function drawcities() {
     
     setchangecity();
 }
-
-//データのロードに関する関数       
+    
 function loaddata() {
-    //ファイルの読み込み
-    //0:日付,1:都道府県コード,2:都道府県名,3:各地の感染者数_1日ごとの発表数,4:各地の感染者数_累計,5:各地の死者数_1日ごとの発表数,6:各地の死者数_累計
     csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
-    //csv_data('./sampledata.csv');
 
     function csv_data(dataPath) {
         const request = new XMLHttpRequest();
@@ -222,7 +196,6 @@ function loaddata() {
             const response = event.target.responseText;
             var resArray = response.split("\r");
             
-            //1行目を削除した配列を生成する
             for ( var i=1; i<resArray.length; i++ ) {
                 var data = resArray[i].split(",");
                 var day = data[0];
@@ -230,18 +203,18 @@ function loaddata() {
                 var totalday = data[4];
                 var newday = data[3];
                 
-                //プログラム処理用データ取得
-                if ( citiesIsLoad == false ) {
+                if ( cities.count != MAX_CITY_COUNT  ) {
                     if ( cities.indexOf(city) == -1 && city != "" && city != null ) {
                         cities.push(city);
                     }
                 }
             }
+
+            cities.push("全国");
+            MAX_CITY_COUNT = cities.count;
             
-            //都市リストの描画
             drawcities();
                 
-            //1行目を削除した配列を生成する
             for ( var i=1; i<resArray.length; i++ ) {
                 try {
                     var data = resArray[i].split(",");
@@ -250,18 +223,12 @@ function loaddata() {
                     var totalday = data[4];
                     var newday = data[3];
 
-                    //分析用データ取得
-                    //ユーザの指定した地域の時だけ処理する
                     if ( city.indexOf(KEY_NAME) !== -1 ) {
-                        //ユーザの指定した範囲のデータを取得する
                         if ( checkdaterange(day) ) {
-                            //指定範囲内の場合に処理する
                             days.push(day);
 
-                            //新規感染者
                             newdays.push(newday);
 
-                            //最小と最大の計算
                             if ( maxnewday < Number(newday) ) {
                                 maxnewday = Number(newday);
                             }
@@ -275,27 +242,7 @@ function loaddata() {
                 }                
             }
             
-            //データを週毎のデータに生成する
-            /*
-            //汎用的に計算するため一度週毎の配列を作りそこに入れ込む
-            var weeks = new Array();
-            var week = new Array();
-            var countmax = 7;//データの集積単位
-            for ( var i=0; i<newdays.length; i++ ) {
-                if ( week.length < countmax || i == newdays.length-1 ) {
-                    var newday = newdays[i];
-                    week.push(newday);
-                } else {
-                    weeks.push(week);
-                    week = new Array();
-                }
-            }
-            
-            alert(weeks);
-            */
-            
-            //周毎日付ラベルの生成
-            var countmax = 7;//データの集積単位
+            var countmax = 7;
             var count = 0;
             for ( var i=0; i<days.length; i++ ) {
                 if ( count == countmax || i == days.length-1 ) {
@@ -312,7 +259,6 @@ function loaddata() {
                 if ( count == countmax ) {
                     newweeks.push(week);
                     
-                    //最小と最大の計算
                     if ( maxnewday < Number(week) ) {
                         maxnewday = Number(week);
                     }
@@ -324,12 +270,11 @@ function loaddata() {
                     week = 0;
                     count = 0;
                 } else if ( i == newdays.length-1 ) {
-                    var vrweek = week / count * countmax;//データが単位に満たない場合は仮の値を設定
+                    var vrweek = week / count * countmax;
                     week = vrweek;
                     
                     newweeks.push(week);
                     
-                    //最小と最大の計算
                     if ( maxnewday < Number(week) ) {
                         maxnewday = Number(week);
                     }
@@ -347,13 +292,8 @@ function loaddata() {
                 count++;
             }
             
-            //グラフの描画
             drawchart(newweeksdays, newweeks);
             
-            //都市データはもう読まない
-            citiesIsLoad = true;
-            
-            //autoplay実行
             if ( autoplay == true ) {
                 autoplaymode();
             }
@@ -365,7 +305,6 @@ function loaddata() {
 }
         
 function reloaddata() {
-    //クリア
     var graph = document.getElementById("graph");
     graph.innerHTML = "<canvas id='chart'></canvas>";
     
@@ -380,14 +319,11 @@ function reloaddata() {
     loaddata(); 
 }
 
-//チャートに関する処理
 function drawchart(lbl, data) {
-    //色変更
     var borderColor = "rgba(255,0,0,1)";
     var backgroundColor = "rgba(0,0,0,0)";
     var fontColor = "rgba(255,0,0,1)";
     
-    //Chart表示
     var ctx = document.getElementById("chart");
     var myLineChart = new Chart(ctx, {
     type: 'line',
@@ -410,7 +346,7 @@ function drawchart(lbl, data) {
             },
             scales: {
                  yAxes: [{
-                    id: 'y1', // set unique name of axis on the right
+                    id: 'y1',
                     position: 'left',
                     scaleLabel: {
                       display: true,
@@ -427,35 +363,7 @@ function drawchart(lbl, data) {
     });
 }
 
-//その他
 function dateToFormatString(date, fmt, locale, pad) {
-    // %fmt% を日付時刻表記に。
-    // 引数
-    //  date:  Dateオブジェクト
-    //  fmt:   フォーマット文字列、%YYYY%年%MM%月%DD%日、など。
-    //  locale:地域指定。デフォルト（入力なし）の場合はja-JP（日本）。現在他に対応しているのはen-US（英語）のみ。
-    //  pad:   パディング（桁数を埋める）文字列。デフォルト（入力なし）の場合は0。
-    // 例：2016年03月02日15時24分09秒
-    // %YYYY%:4桁年（2016）
-    // %YY%:2桁年（16）
-    // %MMMM%:月の長い表記、日本語では数字のみ、英語ではMarchなど（3）
-    // %MMM%:月の短い表記、日本語では数字のみ、英語ではMar.など（3）
-    // %MM%:2桁月（03）
-    // %M%:月（3）
-    // %DD%:2桁日（02）
-    // %D%:日（2）
-    // %HH%:2桁で表した24時間表記の時（15）
-    // %H%:24時間表記の時（15）
-    // %h%:2桁で表した12時間表記の時（03）
-    // %h%:12時間表記の時（3）
-    // %A%:AM/PM表記（PM）
-    // %A%:午前/午後表記（午後）
-    // %mm%:2桁分（24）
-    // %m%:分（24）
-    // %ss%:2桁秒（09）
-    // %s%:秒（9）
-    // %W%:曜日の長い表記（水曜日）
-    // %w%:曜日の短い表記（水）
     var padding = function(n, d, p) {
         p = p || '0';
         return (p.repeat(d) + n).slice(-d);
@@ -521,22 +429,15 @@ function dateToFormatString(date, fmt, locale, pad) {
             return getDataByLocale(locale, weekday, date.getDay());
         },
     };
-    var fmtstr = ['']; // %%（%として出力される）用に空文字をセット。
     Object.keys(format).forEach(function(key) {
-        fmtstr.push(key); // ['', 'YYYY', 'YY', 'MMMM',... 'W', 'w']のような配列が生成される。
     })
     var re = new RegExp('%(' + fmtstr.join('|') + ')%', 'g');
-    // /%(|YYYY|YY|MMMM|...W|w)%/g のような正規表現が生成される。
     var replaceFn = function(match, fmt) {
-    // match には%YYYY%などのマッチした文字列が、fmtにはYYYYなどの%を除くフォーマット文字列が入る。
         if(fmt === '') {
             return '%';
         }
         var func = format[fmt];
-        // fmtがYYYYなら、format['YYYY']がfuncに代入される。つまり、
-        // function() { return padding(date.getFullYear(), 4, pad); }という関数が代入される。
         if(func === undefined) {
-            //存在しないフォーマット
             return match;
         }
         return func(locale);

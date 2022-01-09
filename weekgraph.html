@@ -5,8 +5,8 @@
 	<title>超簡単新規感染者グラフ全国版</title>
     <!--Script-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.min.js"></script>
-	<script src="../../BasicTool/main.js"></script>
-	<script src="../../BasicTool/ga.js"></script>
+	<script src="./main.js"></script>
+	<script src="./ga.js"></script>
 	<script src="./program.js"></script>
     <!--Script-->
     <style>
@@ -47,10 +47,10 @@
     </style>
 </head>
 <body onload="init();">
-    <h1 id="title">超簡単新規感染者グラフ全国版</h1>
+    <h1 id="title">Japan Alert Graph</h1>
     <div class="form" id="form">
         <select name="cities" id="cities" onchange="changecity();"></select><br/>
-        <input type="date" id="start" value="2020/01/01"><br/>
+        <input type="date" id="start" value="2022/01/01"><br/>
         <input type="date" id="end" value=""><br/>
         <button type="submit" onclick="reloaddata();"><big>読み込み</big></button>
     </div>
@@ -59,9 +59,7 @@
         <canvas id="chart"></canvas>
     </div>
     <div id="footer">
-        <script>
-            document.write("2021©️" + document.domain);
-        </script>
+      <p class="copyright">Copyright&nbsp;&nbsp;Iizuka Toshihide&nbsp;All&nbsp;Rights&nbsp;Reserved.</p>
     </div>
 </body>
 </html>
