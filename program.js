@@ -8,7 +8,7 @@
 //====================================
 
 //***[MAIN]***
-var KEY_NAME = "全国";
+var KEY_NAME = "東京都";
         
 var days = new Array();
 
@@ -75,7 +75,7 @@ function init() {
     } catch(e) { 
     }
     
-    var startdate = "2022-01-01";
+    var startdate = "2020-01-01";
     var enddate = dateToFormatString(new Date(), "%YYYY%-%MM%-%DD%");
     
     showdateform(startdate, enddate);
@@ -210,7 +210,7 @@ function loaddata() {
                 }
             }
 
-            cities.push("全国");
+            cities.push("東京都");
             MAX_CITY_COUNT = cities.count;
             
             drawcities();
