@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>超簡単新規感染者グラフ全国版</title>
+    <!--Script-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.min.js"></script>
+	<script src="../../BasicTool/main.js"></script>
+	<script src="../../BasicTool/ga.js"></script>
+	<script src="./program.js"></script>
+    <!--Script-->
+    <style>
+        body {
+            margin: 0;
+            padding-top: 2em;
+            display:block;
+            justify-content: center;
+            text-align: center;
+            background-color: white;
+        }
+        
+        .form {
+            background-color: skyblue;
+            padding: 10px 20px;
+        }
+        
+        #graph {
+            margin: 0;
+            position: relative;
+            margin: 0 auto;       
+            width: 100%;
+            height: auto;
+            overflow: hidden;
+        }
+        
+        #footer {
+            margin: 0 auto;
+            position: relative;
+            display: inline-block;
+            bottom:0px;
+            left: 0px;
+            width:100%;
+            color: #aaa;
+            font-size: 16px;
+            background: #555;
+        }
+    </style>
+</head>
+<body onload="init();">
+    <h1 id="title">超簡単新規感染者グラフ全国版</h1>
+    <div class="form" id="form">
+        <select name="cities" id="cities" onchange="changecity();"></select><br/>
+        <input type="date" id="start" value="2020/01/01"><br/>
+        <input type="date" id="end" value=""><br/>
+        <button type="submit" onclick="reloaddata();"><big>読み込み</big></button>
+    </div>
+    <hr/>
+	<div id="graph">
+        <canvas id="chart"></canvas>
+    </div>
+    <div id="footer">
+        <script>
+            document.write("2021©️" + document.domain);
+        </script>
+    </div>
+</body>
+</html>
