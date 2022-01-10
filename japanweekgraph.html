@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+	<meta charset="UTF-8">
+	<title>Japan Alert Week Graph</title>
+    <!--Script-->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WK0WDPMXF1"></script>
+	<script src="./ga.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.min.js"></script>
+    <script>
+		//Main
+		var KEY_NAME = "全国";
+				
+		var newdata = "";
+		
+		var cities = new Array();
+		var citiesIsLoad = false;
+		
+		var isWidget = false;
+		
+		var isDark = false;
+                
+        var days = new Array();
+
+        var newdays = new Array();
+
+        var newweeks = new Array();
+        var newweeksdays = new Array();
+                
+        var minnewday = 999999;
+        var maxnewday = 0;
+
+        function init() {
+			var params = (new URL(document.location)).searchParams;
+			try {
+				var changetime = removehtml(params.get("changetime"));
+				if ( changetime != "" && Number(changetime) > 0 ) { autochangetime = Number(changetime); }
+				} catch(e) {
+			}
+			try {
+				var darkmode = removehtml(params.get("darkmode"));
+				if ( darkmode == "dark" ) {
+					isDark = true;
+					document.body.style.color = "white";
+					document.body.style.backgroundColor = "black";
+				}
+			} catch(e) {
+			}
+			try {
+				var widgetmode = removehtml(params.get("widgetmode"));
+				if ( widgetmode == "widget" ) {
+					isWidget = true;
+					var form = document.getElementById("form");
+					form.style.visibility = "hidden";
+					form.style.height = "0px";
+					var title = document.getElementById("title");
+					title.style.visibility = "hidden";
+					title.style.height = "0px";
+				}
+			} catch(e) { 
+			}
+            
+			var startdate = "2020-01-01";
+			var enddate = dateToFormatString(new Date(), "%YYYY%-%MM%-%DD%");
+			
+			showdateform(startdate, enddate);
+            
+            loaddata();
+        }
+
+		function nowmonth() {
+			var date = new Date();
+			date.setDate(1);
+			return date;
+		}
+		
+		function showdateform(startvalue, endvalue) {
+			var start = document.getElementById("start");
+			var end = document.getElementById("end");
+			start.value = startvalue;
+			start.min = "2020-01-01";
+			start.max = endvalue;
+			end.value = endvalue;
+			end.min = "2020-01-01";
+			end.max = endvalue;
+		}
+		
+		function checkdaterange(date) {
+			try { 
+				var start = document.getElementById("start");
+				var end = document.getElementById("end");
+		
+				var startdate = Date.parse(start.value);
+				var enddate = Date.parse(end.value);
+				var checkday = Date.parse(date);
+		
+				var flag = false;
+				if ( Number(startdate) <= Number(checkday)  && Number(checkday) <= Number(enddate) ) {
+		
+					flag = true;
+				} else {
+					flag = false;
+				}
+			} catch(e) {
+			}
+			return flag;
+		}
+
+        function loaddata() {
+            csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
+
+            function csv_data(dataPath) {
+                const request = new XMLHttpRequest();
+                request.addEventListener('load', (event) => {
+                    const response = event.target.responseText;
+                    var resArray = response.split("\r");
+                    
+                    //Keyの生成
+                    for ( var i=1; i<resArray.length; i++ ) {
+                        var data = resArray[i].split(",");
+                        var day = data[0];
+                        var city = data[2];
+                        var totalday = data[4];
+                        var newday = data[3];
+                        
+                        if ( cities.indexOf(city) == -1 && city != "" && city != null ) {
+                            cities.push(city);
+                        }
+                    }
+                    
+                    //全国の感染者数計算
+                    var covid19days = new Array();
+                    var covid19data = new Map();
+                    for (var value in cities) {
+                        var key = cities[value];
+                        for ( var i=1; i<resArray.length; i++ ) {
+                            try {
+                                var data = resArray[i].split(",");
+                                var day = data[0];
+                                var city = data[2];
+                                var totalday = data[4];
+                                var newday = data[3];
+
+                                if ( city.indexOf(key) !== -1 ) {
+                                    if ( checkdaterange(day) ) {
+                                        covid19days.push(day);
+                                        if ( covid19data.has(day) == true ) {
+                                            var addnewday = Number(covid19data.get(day)) + Number(newday);
+                                            covid19data.set(day, addnewday);
+                                        } else {
+                                            covid19data.set(day, newday);
+                                        }
+                                    }
+                                }                
+                            } catch(e) {
+                            }              
+                        }
+                    }
+
+                    
+                    var keys = covid19data.keys();
+                    for(var key of keys) {
+                        var newday = covid19data.get(key);
+                        newdays.push(newday);
+                        days.push(key);
+                    }                
+                    days = Array.from(new Set(days))
+                    
+                    var countmax = 7;
+                    var count = 0;
+                    for ( var i=0; i<days.length; i++ ) {
+                        if ( count == countmax || i == days.length-1 ) {
+                            var day = days[i];
+                            newweeksdays.push(day);
+                            count = 0;
+                        }
+                        count++;
+                    }
+                    
+                    count = 0;
+                    var week = 0;
+                    for ( var i=0; i<newdays.length; i++ ) {
+                        if ( count == countmax ) {
+                            newweeks.push(week);
+                            
+                            if ( maxnewday < Number(week) ) {
+                                maxnewday = Number(week);
+                            }
+
+                            if ( minnewday > Number(week) ) {
+                                minnewday = Number(week);
+                            }
+                            
+                            week = 0;
+                            count = 0;
+                        } else if ( i == newdays.length-1 ) {
+                            var vrweek = week / count * countmax;
+                            week = vrweek;
+                            
+                            newweeks.push(week);
+                            
+                            if ( maxnewday < Number(week) ) {
+                                maxnewday = Number(week);
+                            }
+
+                            if ( minnewday > Number(week) ) {
+                                minnewday = Number(week);
+                            }
+                            
+                            week = 0;
+                            count = 0;                    
+                        } else {
+                            var  weekdays = newdays[i];
+                            week = week + Number(weekdays);
+                        }
+                        count++;
+                    }
+                    
+                    drawchart(newweeksdays, newweeks);                    
+                });
+                request.open('GET', dataPath, true);
+                request.send();
+            }
+        }
+                
+        function reloaddata() {
+            var graph = document.getElementById("graph");
+            graph.innerHTML = "<canvas id='chart'></canvas>";
+            
+            days = new Array();
+            newdays = new Array();
+            newweeks = new Array();
+            newweeksdays = new Array();
+            
+            minnewday = 999999;
+            maxnewday = 0;
+            
+            loaddata(); 
+        }
+
+        function drawchart(lbl, data) {
+            var borderColor = "rgba(255,0,0,1)";
+            var backgroundColor = "rgba(0,0,0,0)";
+            var fontColor = "rgba(255,0,0,1)";
+            
+            var ctx = document.getElementById("chart");
+            var myLineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: lbl,
+                datasets: [
+                    {
+                        id: 'y1',
+                        label: '新規感染者数',
+                        data: data,
+                        borderColor: borderColor,
+                        backgroundColor: backgroundColor
+                    },
+                ],
+            },
+            options: {
+                title: {
+                    display: true,
+                        text: KEY_NAME + "（" + lbl[0] + "~" + lbl[lbl.length-1] + "）"
+                    },
+                    scales: {
+                        yAxes: [{
+                            id: 'y1',
+                            position: 'left',
+                            scaleLabel: {
+                            display: true,
+                            labelString: '新規感染者数',
+                            fontColor: fontColor
+                            },
+                            ticks: {
+                            beginAtZero: true,
+                            max: maxnewday
+                            }
+                        }]
+                    },
+                }
+            });
+        }
+
+		function dateToFormatString(date, fmt, locale, pad) {
+			var padding = function(n, d, p) {
+				p = p || '0';
+				return (p.repeat(d) + n).slice(-d);
+			};
+			var DEFAULT_LOCALE = 'ja-JP';
+			var getDataByLocale = function(locale, obj, param) {
+				var array = obj[locale] || obj[DEFAULT_LOCALE];
+				return array[param];
+			};
+			var format = {
+				'YYYY': function() { return padding(date.getFullYear(), 4, pad); },
+				'YY': function() { return padding(date.getFullYear() % 100, 2, pad); },
+				'MMMM': function(locale) {
+					var month = {
+						'ja-JP': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+						'en-US': ['January', 'February', 'March', 'April', 'May', 'June',
+								'July', 'August', 'September', 'October', 'November', 'December'],
+					};
+					return getDataByLocale(locale, month, date.getMonth());
+				},
+				'MMM': function(locale) {
+					var month = {
+						'ja-JP': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'],
+						'en-US': ['Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'June',
+								'July', 'Aug.', 'Sept.', 'Oct.', 'Nov.', 'Dec.'],
+					};
+					return getDataByLocale(locale, month, date.getMonth());
+				},
+				'MM': function() { return padding(date.getMonth()+1, 2, pad); },
+				'M': function() { return date.getMonth()+1; },
+				'DD': function() { return padding(date.getDate(), 2, pad); },
+				'D': function() { return date.getDate(); },
+				'HH': function() { return padding(date.getHours(), 2, pad); },
+				'H': function() { return date.getHours(); },
+				'hh': function() { return padding(date.getHours() % 12, 2, pad); },
+				'h': function() { return date.getHours() % 12; },
+				'mm': function() { return padding(date.getMinutes(), 2, pad); },
+				'm': function() { return date.getMinutes(); },
+				'ss': function() { return padding(date.getSeconds(), 2, pad); },
+				's': function() { return date.getSeconds(); },
+				'A': function() {
+					return date.getHours() < 12 ? 'AM' : 'PM';
+				},
+				'a': function(locale) {
+					var ampm = {
+						'ja-JP': ['午前', '午後'],
+						'en-US': ['am', 'pm'],
+					};
+					return getDataByLocale(locale, ampm, date.getHours() < 12 ? 0 : 1);
+				},
+				'W': function(locale) {
+					var weekday = {
+						'ja-JP': ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+						'en-US': ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+					};
+					return getDataByLocale(locale, weekday, date.getDay());
+				},
+				'w': function(locale) {
+					var weekday = {
+						'ja-JP': ['日', '月', '火', '水', '木', '金', '土'],
+						'en-US':  ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
+					};
+					return getDataByLocale(locale, weekday, date.getDay());
+				},
+			};
+			var fmtstr = [''];
+			Object.keys(format).forEach(function(key) {
+				fmtstr.push(key);
+			})
+			var re = new RegExp('%(' + fmtstr.join('|') + ')%', 'g');
+			var replaceFn = function(match, fmt) {
+			if(fmt === '') {
+				return '%';
+			}
+			var func = format[fmt];
+			if(func === undefined) {
+				return match;
+			}
+			return func(locale);
+		};
+		return fmt.replace(re, replaceFn);
+}
+                
+        function removehtml(str) {
+            return str.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,'');
+        }
+                
+        function delayedCall(second, callBack){
+            setTimeout(callBack, second * 1000);
+        }
+    </script>
+    <!--Script-->
+    <style>        
+        body {
+            margin: 0;
+            padding-top: 2em;
+            display:block;
+            justify-content: center;
+            text-align: center;
+            background-color: white;
+        }
+        
+        .form {
+            background-color: red;
+            padding: 10px 20px;
+        }
+        
+        #graph {
+            margin: 0;
+            position: relative;
+            margin: 0 auto;       
+            width: 100%;
+            height: auto;
+            overflow: hidden;
+        }
+        
+        #footer {
+            position: absolute;
+            display: inline-block;
+            bottom:0px;
+            left: 0px;
+            width:100%;
+            color: #aaa;
+            font-size: 16px;
+            background: #555;
+        }
+    </style>
+</head>
+<body onload="init();">
+    <h1 id="title">Japan Alert Week Graph</h1>
+    <div class="form" id="form">
+        <!-- <select name="cities" id="cities" onchange="changecity();"></select><br/> -->
+        <input type="date" id="start" value="2020/01/01"><br/>
+        <input type="date" id="end" value=""><br/>
+        <button type="submit" onclick="reloaddata();"><big>読み込み</big></button>
+    </div>
+    <hr/>
+	<div id="graph">
+        <canvas id="chart"></canvas>
+    </div>
+    <div id="footer">
+        <script>
+            document.write("2021©️" + document.domain);
+        </script>
+    </div>
+</body>
+</html>
