@@ -2,12 +2,12 @@
 <html lang="ja">
 <head>
 	<meta charset="UTF-8">
-	<title>Japan Alert Week Graph</title>
+	<title>Japan Alert Week CSV Export</title>
     <!--Script-->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-WK0WDPMXF1"></script>
 	<script src="./ga.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.3.0/Chart.min.js"></script>
-    <script>
+	<script>
 		//Main
 		var KEY_NAME = "全国";
 				
@@ -19,24 +19,14 @@
 		var isWidget = false;
 		
 		var isDark = false;
-                
+
         var days = new Array();
-
         var newdays = new Array();
-
-        var newweeks = new Array();
-        var newweeksdays = new Array();
-                
-        var minnewday = 999999;
-        var maxnewday = 0;
-
-        function init() {
+        var totaldays = new Array();
+		
+		function init() {
 			var params = (new URL(document.location)).searchParams;
-			try {
-				var changetime = removehtml(params.get("changetime"));
-				if ( changetime != "" && Number(changetime) > 0 ) { autochangetime = Number(changetime); }
-				} catch(e) {
-			}
+
 			try {
 				var darkmode = removehtml(params.get("darkmode"));
 				if ( darkmode == "dark" ) {
@@ -46,6 +36,7 @@
 				}
 			} catch(e) {
 			}
+			
 			try {
 				var widgetmode = removehtml(params.get("widgetmode"));
 				if ( widgetmode == "widget" ) {
@@ -59,15 +50,15 @@
 				}
 			} catch(e) { 
 			}
-            
+			
 			var startdate = "2020-01-01";
 			var enddate = dateToFormatString(new Date(), "%YYYY%-%MM%-%DD%");
 			
 			showdateform(startdate, enddate);
-            
-            loaddata();
-        }
-
+			
+			generatecsv();
+		}
+		
 		function nowmonth() {
 			var date = new Date();
 			date.setDate(1);
@@ -105,32 +96,34 @@
 			}
 			return flag;
 		}
-
-        function loaddata() {
-            csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
-
-            function csv_data(dataPath) {
-                const request = new XMLHttpRequest();
-                request.addEventListener('load', (event) => {
-                    const response = event.target.responseText;
-                    var resArray = response.split("\r");
-                    
-                    //Keyの生成
-                    for ( var i=1; i<resArray.length; i++ ) {
-                        var data = resArray[i].split(",");
-                        var day = data[0];
-                        var city = data[2];
-                        var totalday = data[4];
-                        var newday = data[3];
-                        
-                        if ( cities.indexOf(city) == -1 && city != "" && city != null ) {
-                            cities.push(city);
-                        }
-                    }
+		
+		function generatecsv() {
+			csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
+		
+			function csv_data(dataPath) {
+				const request = new XMLHttpRequest();
+				request.addEventListener('load', (event) => {
+					const response = event.target.responseText;
+					var resArray = response.split("\r");
+					
+					for ( var i=1; i<resArray.length; i++ ) {
+						var data = resArray[i].split(",");
+						var day = data[0];
+						var city = data[2];
+						var totalday = data[4];
+						var newday = data[3];
+						
+						if ( citiesIsLoad == false ) {
+							if ( cities.indexOf(city) == -1 && city != "" && city != null ) {
+								cities.push(city);
+							}
+						}
+					}
                     
                     //全国の感染者数計算
                     var covid19days = new Array();
                     var covid19data = new Map();
+                    var covid19totaldata = new Map();
                     for (var value in cities) {
                         var key = cities[value];
                         for ( var i=1; i<resArray.length; i++ ) {
@@ -150,6 +143,12 @@
                                         } else {
                                             covid19data.set(day, newday);
                                         }
+                                        if ( covid19totaldata.has(day) == true ) {
+                                            var addtotalday = Number(covid19totaldata.get(day)) + Number(totalday);
+                                            covid19totaldata.set(day, addtotalday);
+                                        } else {
+                                            covid19totaldata.set(day, totalday);
+                                        }
                                     }
                                 }                
                             } catch(e) {
@@ -162,125 +161,66 @@
                         var newday = covid19data.get(key);
                         newdays.push(newday);
                         days.push(key);
+                    }
+					keys = covid19totaldata.keys();
+                    for(var key of keys) {
+                        var totalday = covid19totaldata.get(key);
+                        totaldays.push(totalday);
                     }                
                     days = Array.from(new Set(days));
-                    
-                    var countmax = 7;
-                    var count = 0;
-                    for ( var i=0; i<days.length; i++ ) {
-                        if ( count == countmax || i == days.length-1 ) {
-                            var day = days[i];
-                            newweeksdays.push(day);
-                            count = 0;
-                        }
-                        count++;
-                    }
-                    
-                    count = 0;
-                    var week = 0;
-                    for ( var i=0; i<newdays.length; i++ ) {
-                        if ( count == countmax ) {
-                            newweeks.push(week);
-                            
-                            if ( maxnewday < Number(week) ) {
-                                maxnewday = Number(week);
-                            }
-
-                            if ( minnewday > Number(week) ) {
-                                minnewday = Number(week);
-                            }
-                            
-                            week = 0;
-                            count = 0;
-                        } else if ( i == newdays.length-1 ) {
-                            var vrweek = week / count * countmax;
-                            week = vrweek;
-                            
-                            newweeks.push(week);
-                            
-                            if ( maxnewday < Number(week) ) {
-                                maxnewday = Number(week);
-                            }
-
-                            if ( minnewday > Number(week) ) {
-                                minnewday = Number(week);
-                            }
-                            
-                            week = 0;
-                            count = 0;                    
-                        } else {
-                            var  weekdays = newdays[i];
-                            week = week + Number(weekdays);
-                        }
-                        count++;
-                    }
-                    
-                    drawchart(newweeksdays, newweeks);                    
-                });
-                request.open('GET', dataPath, true);
-                request.send();
-            }
-        }
-                
-        function reloaddata() {
-            var graph = document.getElementById("graph");
-            graph.innerHTML = "<canvas id='chart'></canvas>";
-            
-            days = new Array();
-            newdays = new Array();
-            newweeks = new Array();
-            newweeksdays = new Array();
-            
-            minnewday = 999999;
-            maxnewday = 0;
-            
-            loaddata(); 
-        }
-
-        function drawchart(lbl, data) {
-            var borderColor = "rgba(255,0,0,1)";
-            var backgroundColor = "rgba(0,0,0,0)";
-            var fontColor = "rgba(255,0,0,1)";
-            
-            var ctx = document.getElementById("chart");
-            var myLineChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: lbl,
-                datasets: [
-                    {
-                        id: 'y1',
-                        label: '新規感染者数',
-                        data: data,
-                        borderColor: borderColor,
-                        backgroundColor: backgroundColor
-                    },
-                ],
-            },
-            options: {
-                title: {
-                    display: true,
-                        text: KEY_NAME + "（" + lbl[0] + "~" + lbl[lbl.length-1] + "）"
-                    },
-                    scales: {
-                        yAxes: [{
-                            id: 'y1',
-                            position: 'left',
-                            scaleLabel: {
-                            display: true,
-                            labelString: '新規感染者数',
-                            fontColor: fontColor
-                            },
-                            ticks: {
-                            beginAtZero: true,
-                            max: maxnewday
-                            }
-                        }]
-                    },
-                }
-            });
-        }
-
+					
+					var countmax = 7;
+					var count = 0;
+					newdata = "日付(始点),日付(終点),地域,新規感染者数(1),累積感染者数(1),新規感染者数(2),累積感染者数(2),新規感染者数(3),累積感染者数(3),新規感染者数(4),累積感染者数(4),新規感染者数(5),累積感染者数(5),新規感染者数(6),累積感染者数(6),新規感染者数(7),累積感染者数(7),週合計新規感染者数\n";
+					var weekdata = "";
+					var startday = "";
+					var endday = "";
+					var weeknewday = 0;
+					
+					for ( var i=1; i<days.length; i++ ) {
+						try {
+							var day = days[i];
+							var city = KEY_NAME;
+							var totalday = totaldays[i];
+							var newday = newdays[i];
+		
+							if ( checkdaterange(day) ) {
+								if ( day != "" && city != "" && newday != "" && totalday != "" ) {
+										
+									weekdata = weekdata + newday + "," + totalday + ",";
+									weeknewday = weeknewday + Number(newday);
+									
+									count++;
+									
+									if ( count == 1 ) {
+										startday = day;
+									} else if ( count == countmax ) {
+										endday = day;
+										newdata = newdata + startday.replace(/\n/g,'') + "," + endday.replace(/\n/g,'')  + "," + city + "," + weekdata + weeknewday + "\n";
+										
+										startday = "";
+										endday = "";
+										weekdata = "";
+										weeknewday = 0;
+										count = 0;
+									} else {
+									}
+								}
+							} 
+						} catch(e) {
+						}                
+					}
+					
+					var result = document.getElementById("result");
+					result.value = newdata;
+					
+					citiesIsLoad = true;
+				});
+				request.open('GET', dataPath, true);
+				request.send();
+			}
+		}
+		
 		function dateToFormatString(date, fmt, locale, pad) {
 			var padding = function(n, d, p) {
 				p = p || '0';
@@ -364,17 +304,17 @@
 		};
 		return fmt.replace(re, replaceFn);
 }
-                
-        function removehtml(str) {
-            return str.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,'');
-        }
-                
-        function delayedCall(second, callBack){
-            setTimeout(callBack, second * 1000);
-        }
-    </script>
+        
+function removehtml(str) {
+    return str.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,'');
+}
+        
+function delayedCall(second, callBack){
+    setTimeout(callBack, second * 1000);
+}
+	</script>
     <!--Script-->
-    <style>        
+    <style>
         body {
             margin: 0;
             padding-top: 2em;
@@ -387,15 +327,6 @@
         .form {
             background-color: red;
             padding: 10px 20px;
-        }
-        
-        #graph {
-            margin: 0;
-            position: relative;
-            margin: 0 auto;       
-            width: 100%;
-            height: auto;
-            overflow: hidden;
         }
         
         #footer {
@@ -411,17 +342,14 @@
     </style>
 </head>
 <body onload="init();">
-    <h1 id="title">Japan Alert Week Graph</h1>
+    <h1 id="title">Japan Alert Week CSV Export</h1>
     <div class="form" id="form">
-        <!-- <select name="cities" id="cities" onchange="changecity();"></select><br/> -->
         <input type="date" id="start" value="2020/01/01"><br/>
-        <input type="date" id="end" value=""><br/>
-        <button type="submit" onclick="reloaddata();"><big>読み込み</big></button>
+        <input type="date" id="end" value="" readonly><br/>
+        <button type="submit" onclick="generatecsv();"><big>読み込み</big></button>
     </div>
     <hr/>
-	<div id="graph">
-        <canvas id="chart"></canvas>
-    </div>
+    <textarea id="result" name="result" cols=120 rows=5></textarea>
     <div id="footer">
         <script>
             document.write("2021©️" + document.domain);
