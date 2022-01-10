@@ -8,27 +8,18 @@
 	<script src="./ga.js"></script>
 	<script>
 		//Main
-		
-		//データ
 		var KEY_NAME = "東京都";
 				
-		//日付配列の生成
-		//var days = new Array();
+		var newdata = "";
 		
-		//新規感染者配列の生成
-		var newdata = "";//結果を受け取る
-		
-		//都市リスト配列
 		var cities = new Array();
 		var citiesIsLoad = false;
 		
 		var isWidget = false;
 		
-		//darkmode
 		var isDark = false;
 		
 		function init() {
-			//パラメーター取得
 			var params = (new URL(document.location)).searchParams;
 			try {
 				var changetime = removehtml(params.get("changetime"));
@@ -36,7 +27,6 @@
 				} catch(e) {
 			}
 			
-			//表示の調整
 			try {
 				var darkmode = removehtml(params.get("darkmode"));
 				if ( darkmode == "dark" ) {
@@ -61,17 +51,14 @@
 			} catch(e) { 
 			}
 			
-			//日付フォームの変更
-			var startdate = "2020-01-01";//dateToFormatString(nowmonth(), "%YYYY%-%MM%-%DD%");
+			var startdate = "2020-01-01";
 			var enddate = dateToFormatString(new Date(), "%YYYY%-%MM%-%DD%");
 			
 			showdateform(startdate, enddate);
 			
-			//データの読み込み
 			generatecsv();
 		}
-				
-		//日付に関する関数
+		
 		function nowmonth() {
 			var date = new Date();
 			date.setDate(1);
@@ -98,7 +85,6 @@
 				var enddate = Date.parse(end.value);
 				var checkday = Date.parse(date);
 		
-				// 現在は2019年3月18日 21:00:00よりも後なら
 				var flag = false;
 				if ( Number(startdate) <= Number(checkday)  && Number(checkday) <= Number(enddate) ) {
 		
@@ -111,7 +97,6 @@
 			return flag;
 		}
 		
-		//地域に関する関数
 		function changecity() {
 			var cty = document.getElementById("cities");
 			var index = cty.selectedIndex;
@@ -149,12 +134,8 @@
 			setchangecity();
 		}
 		
-		//データのロードに関する関数       
 		function generatecsv() {
-			//ファイルの読み込み
-			//0:日付,1:都道府県コード,2:都道府県名,3:各地の感染者数_1日ごとの発表数,4:各地の感染者数_累計,5:各地の死者数_1日ごとの発表数,6:各地の死者数_累計
 			csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
-			//csv_data('./sampledata.csv');
 		
 			function csv_data(dataPath) {
 				const request = new XMLHttpRequest();
@@ -162,7 +143,6 @@
 					const response = event.target.responseText;
 					var resArray = response.split("\r");
 					
-					//1行目を削除した配列を生成する
 					for ( var i=1; i<resArray.length; i++ ) {
 						var data = resArray[i].split(",");
 						var day = data[0];
@@ -170,7 +150,6 @@
 						var totalday = data[4];
 						var newday = data[3];
 						
-						//プログラム処理用データ取得
 						if ( citiesIsLoad == false ) {
 							if ( cities.indexOf(city) == -1 && city != "" && city != null ) {
 								cities.push(city);
@@ -178,10 +157,9 @@
 						}
 					}
 					
-					//都市リストの描画
 					drawcities();
 					
-					var countmax = 7;//データの集積単位
+					var countmax = 7;
 					var count = 0;
 					newdata = "日付(始点),日付(終点),地域,新規感染者数(1),累積感染者数(1),新規感染者数(2),累積感染者数(2),新規感染者数(3),累積感染者数(3),新規感染者数(4),累積感染者数(4),新規感染者数(5),累積感染者数(5),新規感染者数(6),累積感染者数(6),新規感染者数(7),累積感染者数(7),週合計新規感染者数\n";
 					var weekdata = "";
@@ -189,7 +167,6 @@
 					var endday = "";
 					var weeknewday = 0;
 					
-					//1行目を削除した配列を生成する
 					for ( var i=1; i<resArray.length; i++ ) {
 						try {
 							var data = resArray[i].split(",");
@@ -198,31 +175,21 @@
 							var totalday = data[4];
 							var newday = data[3];
 		
-							//分析用データ取得
-							//ユーザの指定した地域の時だけ処理する
 							if ( city.indexOf(KEY_NAME) !== -1 ) {
-								//ユーザの指定した範囲のデータを取得する
 								if ( checkdaterange(day) ) {
-									//指定範囲内の場合に処理する
-									//days.push(day);
-									
 									if ( day != "" && city != "" && newday != "" && totalday != "" ) {
 											
-										//週毎データの生成
 										weekdata = weekdata + newday + "," + totalday + ",";
 										weeknewday = weeknewday + Number(newday);
 										
-										//カウントアップ
 										count++;
 										
-										//CSV作成
 										if ( count == 1 ) {
 											startday = day;
 										} else if ( count == countmax ) {
 											endday = day;
 											newdata = newdata + startday.replace(/\n/g,'') + "," + endday.replace(/\n/g,'')  + "," + city + "," + weekdata + weeknewday + "\n";
 											
-											//一時データのクリア
 											startday = "";
 											endday = "";
 											weekdata = "";
@@ -237,11 +204,9 @@
 						}                
 					}
 					
-					//結果の出力
 					var result = document.getElementById("result");
 					result.value = newdata;
 					
-					//都市データはもう読まない
 					citiesIsLoad = true;
 				});
 				request.open('GET', dataPath, true);
@@ -249,35 +214,7 @@
 			}
 		}
 		
-		//その他
 		function dateToFormatString(date, fmt, locale, pad) {
-			// %fmt% を日付時刻表記に。
-			// 引数
-			//  date:  Dateオブジェクト
-			//  fmt:   フォーマット文字列、%YYYY%年%MM%月%DD%日、など。
-			//  locale:地域指定。デフォルト（入力なし）の場合はja-JP（日本）。現在他に対応しているのはen-US（英語）のみ。
-			//  pad:   パディング（桁数を埋める）文字列。デフォルト（入力なし）の場合は0。
-			// 例：2016年03月02日15時24分09秒
-			// %YYYY%:4桁年（2016）
-			// %YY%:2桁年（16）
-			// %MMMM%:月の長い表記、日本語では数字のみ、英語ではMarchなど（3）
-			// %MMM%:月の短い表記、日本語では数字のみ、英語ではMar.など（3）
-			// %MM%:2桁月（03）
-			// %M%:月（3）
-			// %DD%:2桁日（02）
-			// %D%:日（2）
-			// %HH%:2桁で表した24時間表記の時（15）
-			// %H%:24時間表記の時（15）
-			// %h%:2桁で表した12時間表記の時（03）
-			// %h%:12時間表記の時（3）
-			// %A%:AM/PM表記（PM）
-			// %A%:午前/午後表記（午後）
-			// %mm%:2桁分（24）
-			// %m%:分（24）
-			// %ss%:2桁秒（09）
-			// %s%:秒（9）
-			// %W%:曜日の長い表記（水曜日）
-			// %w%:曜日の短い表記（水）
 			var padding = function(n, d, p) {
 				p = p || '0';
 				return (p.repeat(d) + n).slice(-d);
@@ -343,22 +280,17 @@
 					return getDataByLocale(locale, weekday, date.getDay());
 				},
 			};
-			var fmtstr = ['']; // %%（%として出力される）用に空文字をセット。
+			var fmtstr = [''];
 			Object.keys(format).forEach(function(key) {
-				fmtstr.push(key); // ['', 'YYYY', 'YY', 'MMMM',... 'W', 'w']のような配列が生成される。
+				fmtstr.push(key);
 			})
 			var re = new RegExp('%(' + fmtstr.join('|') + ')%', 'g');
-			// /%(|YYYY|YY|MMMM|...W|w)%/g のような正規表現が生成される。
 			var replaceFn = function(match, fmt) {
-			// match には%YYYY%などのマッチした文字列が、fmtにはYYYYなどの%を除くフォーマット文字列が入る。
 			if(fmt === '') {
 				return '%';
 			}
 			var func = format[fmt];
-			// fmtがYYYYなら、format['YYYY']がfuncに代入される。つまり、
-			// function() { return padding(date.getFullYear(), 4, pad); }という関数が代入される。
 			if(func === undefined) {
-				//存在しないフォーマット
 				return match;
 			}
 			return func(locale);
