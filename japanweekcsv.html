@@ -26,7 +26,12 @@
 		
 		function init() {
 			var params = (new URL(document.location)).searchParams;
-
+			try {
+				var changetime = removehtml(params.get("changetime"));
+				if ( changetime != "" && Number(changetime) > 0 ) { autochangetime = Number(changetime); }
+				} catch(e) {
+			}
+			
 			try {
 				var darkmode = removehtml(params.get("darkmode"));
 				if ( darkmode == "dark" ) {
