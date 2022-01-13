@@ -234,7 +234,7 @@
                     newweeksdays.push(lastdate);
 
                     //未来の感染者数の追加
-                    var newweek = Number(newweeks[newweeks.length-1]) + (Number(newweeks[newweeks.length-1]) - Number(newweeks[newweeks.length-2])) + (Number(newweeks[newweeks.length-2]) - Number(newweeks[newweeks.length-3]) + (Number(newweeks[newweeks.length-2]) - Number(newweeks[newweeks.length-3])));
+                    var newweek = Number(newweeks[newweeks.length-1]) + ((Number(newweeks[newweeks.length-1]) - Number(newweeks[newweeks.length-2])*1.25));
                     newweeks.push(newweek);
 
                     if ( maxnewday < Number(newweek) ) {
