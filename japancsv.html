@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 	<meta charset="UTF-8">
-	<title>Japan Alert Week CSV Export</title>
+	<title>Japan Alert CSV Export</title>
     <!--Script-->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-WK0WDPMXF1"></script>
 	<script src="./ga.js"></script>
@@ -160,15 +160,10 @@
                     cities = Array.from(new Set(cities));
 					
 					drawcities();
-					
-					var countmax = 7;
+					  
 					var count = 0;
-					newdata = "日付(始点),日付(終点),地域,新規感染者数(1),累積感染者数(1),新規感染者数(2),累積感染者数(2),新規感染者数(3),累積感染者数(3),新規感染者数(4),累積感染者数(4),新規感染者数(5),累積感染者数(5),新規感染者数(6),累積感染者数(6),新規感染者数(7),累積感染者数(7),週合計新規感染者数\n";
-					var weekdata = "";
-					var startday = "";
-					var endday = "";
-					var weeknewday = 0;
-					
+					newdata = "日付,地域,新規感染者数,累積感染者数";
+						
 					for ( var i=1; i<resArray.length; i++ ) {
 						try {
 							var data = resArray[i].split(",");
@@ -176,29 +171,11 @@
 							var city = data[2];
 							var totalday = data[4];
 							var newday = data[3];
-		
+
 							if ( city.indexOf(KEY_NAME) !== -1 ) {
 								if ( checkdaterange(day) ) {
 									if ( day != "" && city != "" && newday != "" && totalday != "" ) {
-											
-										weekdata = weekdata + newday + "," + totalday + ",";
-										weeknewday = weeknewday + Number(newday);
-										
-										count++;
-										
-										if ( count == 1 ) {
-											startday = day;
-										} else if ( count == countmax ) {
-											endday = day;
-											newdata = newdata + startday.replace(/\n/g,'') + "," + endday.replace(/\n/g,'')  + "," + city + "," + weekdata + weeknewday + "\n";
-											
-											startday = "";
-											endday = "";
-											weekdata = "";
-											weeknewday = 0;
-											count = 0;
-										} else {
-										}
+										newdata = newdata + day + "," + city + "," + newday + "," + totalday;
 									}
 								}
 							}                
@@ -337,7 +314,7 @@ function delayedCall(second, callBack){
     </style>
 </head>
 <body onload="init();">
-    <h1 id="title">Japan Alert Week CSV Export</h1>
+    <h1 id="title">Japan Alert CSV Export</h1>
     <div class="form" id="form">
         <select name="cities" id="cities" onchange="changecity();"></select><br/>
         <input type="date" id="start" value="2020/01/01"><br/>

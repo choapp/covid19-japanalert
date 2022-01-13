@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 	<meta charset="UTF-8">
-	<title>Japan Alert Week Graph</title>
+	<title>Japan Alert Graph</title>
     <!--Script-->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-WK0WDPMXF1"></script>
 	<script src="./ga.js"></script>
@@ -23,15 +23,9 @@
         var days = new Array();
 
         var newdays = new Array();
-
-        var newweeks = new Array();
-        var newweeksdays = new Array();
                 
         var minnewday = 999999;
         var maxnewday = 0;
-
-        var autoplay = false;
-        var autochangetime = 15;
 
         function init() {
 			var params = (new URL(document.location)).searchParams;
@@ -62,18 +56,6 @@
 				}
 			} catch(e) { 
 			}
-            try {
-                var city = removehtml(params.get("city"));
-                if ( city != "" && city != null ) {
-                    setchangekey(city);
-                }
-                } catch(e) {
-            }
-            try {
-                var mode = removehtml(params.get("autoplay"));
-                if ( mode == "true" ) { autoplay = true; }
-                } catch(e) {
-            }
             
 			var startdate = "2020-01-01";
 			var enddate = dateToFormatString(new Date(), "%YYYY%-%MM%-%DD%");
@@ -83,24 +65,6 @@
             loaddata();
         }
 
-        //Automode
-        function autoplaymode() {
-            var index = -1;
-            
-            do {
-                index = Math.round( Math.random()*cities.length);
-            } while( cities[index] == "" || cities[index] == null );
-            
-            
-            KEY_NAME = cities[index];
-            
-            setchangecity();
-            
-            delayedCall(autochangetime,function(){
-                reloaddata();
-            });
-        }
-		
 		function nowmonth() {
 			var date = new Date();
 			date.setDate(1);
@@ -139,47 +103,6 @@
 			return flag;
 		}
 
-        function setchangekey(text) {
-            KEY_NAME = text;
-        }
-		
-		function changecity() {
-			var cty = document.getElementById("cities");
-			var index = cty.selectedIndex;
-			var value = cty.options[index].value;
-			var text  = cty.options[index].text;
-			
-			KEY_NAME = text;
-			
-			generatecsv();
-		}
-		
-		function setchangecity() {
-			var option = document.getElementById("cities").getElementsByTagName("option");
-			for( var i=0; i<option.length; i++ ) {
-				try { 
-					if( option[i].text == KEY_NAME ){
-						option[i].selected = true;
-						return;
-					}
-				} catch(e) {
-				}
-			}
-		}
-		
-		function drawcities() {
-			var cty = document.getElementById("cities");
-			for ( var i=0; i<cities.length; i++ ) {
-				var option = document.createElement("option");
-				option.text = cities[i];
-				option.value = i;
-				cty.appendChild(option);
-			}
-			cty.disabled = false;
-			
-			setchangecity();
-		}
-
         function loaddata() {
             csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
 
@@ -189,6 +112,7 @@
                     const response = event.target.responseText;
                     var resArray = response.split("\r");
                     
+                    //Keyの生成
                     for ( var i=1; i<resArray.length; i++ ) {
                         var data = resArray[i].split(",");
                         var day = data[0];
@@ -202,8 +126,6 @@
                     }
                     cities = Array.from(new Set(cities));
                     
-                    drawcities();
-                        
                     for ( var i=1; i<resArray.length; i++ ) {
                         try {
                             var data = resArray[i].split(",");
@@ -230,63 +152,8 @@
                         } catch(e) {
                         }                
                     }
-                    
-                    var countmax = 7;
-                    var count = 0;
-                    for ( var i=0; i<days.length; i++ ) {
-                        if ( count == countmax || i == days.length-1 ) {
-                            var day = days[i];
-                            newweeksdays.push(day);
-                            count = 0;
-                        }
-                        count++;
-                    }
-                    
-                    count = 0;
-                    var week = 0;
-                    for ( var i=0; i<newdays.length; i++ ) {
-                        if ( count == countmax ) {
-                            newweeks.push(week);
-                            
-                            if ( maxnewday < Number(week) ) {
-                                maxnewday = Number(week);
-                            }
 
-                            if ( minnewday > Number(week) ) {
-                                minnewday = Number(week);
-                            }
-                            
-                            week = 0;
-                            count = 0;
-                        } else if ( i == newdays.length-1 ) {
-                            var vrweek = week / count * countmax;
-                            week = vrweek;
-                            
-                            newweeks.push(week);
-                            
-                            if ( maxnewday < Number(week) ) {
-                                maxnewday = Number(week);
-                            }
-
-                            if ( minnewday > Number(week) ) {
-                                minnewday = Number(week);
-                            }
-                            
-                            week = 0;
-                            count = 0;                    
-                        } else {
-                            var  weekdays = newdays[i];
-                            week = week + Number(weekdays);
-                        }
-                        count++;
-                    }
-                    
-                    drawchart(newweeksdays, newweeks);
-                    
-                    if ( autoplay == true ) {
-                        autoplaymode();
-                    }
-                    
+                    drawchart(days, newdays)
                 });
                 request.open('GET', dataPath, true);
                 request.send();
@@ -482,7 +349,7 @@
     </style>
 </head>
 <body onload="init();">
-    <h1 id="title">Japan Alert Week Graph</h1>
+    <h1 id="title">Japan Alert Graph</h1>
     <div class="form" id="form">
         <select name="cities" id="cities" onchange="changecity();"></select><br/>
         <input type="date" id="start" value="2020/01/01"><br/>
