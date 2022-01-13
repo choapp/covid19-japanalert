@@ -121,14 +121,16 @@
 				}
 			}
 		}
-		
+
 		function drawcities() {
 			var cty = document.getElementById("cities");
-			for ( var i=0; i<cities.length; i++ ) {
-				var option = document.createElement("option");
-				option.text = cities[i];
-				option.value = i;
-				cty.appendChild(option);
+			if ( cty.length < cities.length ) {
+				for ( var i=0; i<cities.length; i++ ) {
+					var option = document.createElement("option");
+					option.text = cities[i];
+					option.value = i;
+					cty.appendChild(option);
+				}
 			}
 			cty.disabled = false;
 			

@@ -121,19 +121,21 @@
 				}
 			}
 		}
-		
-		function drawcities() {
-			var cty = document.getElementById("cities");
-			for ( var i=0; i<cities.length; i++ ) {
-				var option = document.createElement("option");
-				option.text = cities[i];
-				option.value = i;
-				cty.appendChild(option);
-			}
-			cty.disabled = false;
-			
-			setchangecity();
-		}
+
+        function drawcities() {
+            var cty = document.getElementById("cities");
+            if ( cty.length < cities.length ) {
+                for ( var i=0; i<cities.length; i++ ) {
+                    var option = document.createElement("option");
+                    option.text = cities[i];
+                    option.value = i;
+                    cty.appendChild(option);
+                }
+            }
+            cty.disabled = false;
+            
+            setchangecity();
+        }
 		
 		function generatecsv() {
 			csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');

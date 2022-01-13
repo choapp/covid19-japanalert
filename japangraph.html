@@ -103,46 +103,48 @@
 			return flag;
 		}
 
-function setchangekey(text) {
-    KEY_NAME = text;
-}
-
-function changecity() {
-    var cty = document.getElementById("cities");
-    var index = cty.selectedIndex;
-    var value = cty.options[index].value;
-    var text  = cty.options[index].text;
-    
-    KEY_NAME = text;
-    
-    generatecsv();
-}
-
-function setchangecity() {
-    var option = document.getElementById("cities").getElementsByTagName("option");
-    for( var i=0; i<option.length; i++ ) {
-        try { 
-            if( option[i].text == KEY_NAME ){
-                option[i].selected = true;
-                return;
-            }
-        } catch(e) {
+        function setchangekey(text) {
+            KEY_NAME = text;
         }
-    }
-}
 
-function drawcities() {
-    var cty = document.getElementById("cities");
-    for ( var i=0; i<cities.length; i++ ) {
-        var option = document.createElement("option");
-        option.text = cities[i];
-        option.value = i;
-        cty.appendChild(option);
-    }
-    cty.disabled = false;
-    
-    setchangecity();
-}
+        function changecity() {
+            var cty = document.getElementById("cities");
+            var index = cty.selectedIndex;
+            var value = cty.options[index].value;
+            var text  = cty.options[index].text;
+            
+            KEY_NAME = text;
+            
+            generatecsv();
+        }
+
+        function setchangecity() {
+            var option = document.getElementById("cities").getElementsByTagName("option");
+            for( var i=0; i<option.length; i++ ) {
+                try { 
+                    if( option[i].text == KEY_NAME ){
+                        option[i].selected = true;
+                        return;
+                    }
+                } catch(e) {
+                }
+            }
+        }
+
+        function drawcities() {
+            var cty = document.getElementById("cities");
+            if ( cty.length < cities.length ) {
+                for ( var i=0; i<cities.length; i++ ) {
+                    var option = document.createElement("option");
+                    option.text = cities[i];
+                    option.value = i;
+                    cty.appendChild(option);
+                }
+            }
+            cty.disabled = false;
+            
+            setchangecity();
+        }
 
         function loaddata() {
             csv_data('https://www3.nhk.or.jp/n-data/opendata/coronavirus/nhk_news_covid19_prefectures_daily_data.csv');
@@ -196,7 +198,7 @@ function drawcities() {
                         }                
                     }
 
-                    drawchart(days, newdays)
+                    drawchart(days, newdays);
                 });
                 request.open('GET', dataPath, true);
                 request.send();
