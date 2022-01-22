@@ -232,6 +232,20 @@
 
                     //未来の感染者数の1日あたり増加数
                     var futurenewday = ((newweeks - oldweeks) * 1.25) / 7;//暫定で1.25倍で計算
+                    if ( futurenewday < 0 ) {
+                        var newweeks = 0;
+                        for ( var i=8; i<=14; i++ ) {
+                            newweeks = newweeks + Number(newdays[newdays.length-i]);
+                        }
+
+                        //さらにその前の1週間のデータ集計
+                        var oldweeks = 0;
+                        for ( var i=15; i<=29; i++ ) {
+                            oldweeks = oldweeks + Number(newdays[newdays.length-i]);
+                        }
+                        futurenewday = ((newweeks - oldweeks) * 1.25) / 7;//暫定で1.25倍で計算
+                    }
+                    
 
                     //未来のデータ1週間分生成
                     var date = new Date();
