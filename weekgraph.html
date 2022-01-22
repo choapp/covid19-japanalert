@@ -236,10 +236,12 @@
                     var countmax = 7;
                     var count = 0;
                     for ( var i=0; i<days.length; i++ ) {
-                        if ( count == countmax || i == days.length-1 ) {
+                        if ( count == countmax ) {
                             var day = days[i];
                             newweeksdays.push(day);
                             count = 0;
+                        } else if ( i == days.length-1 ) {
+                            count = 0;                            
                         }
                         count++;
                     }
